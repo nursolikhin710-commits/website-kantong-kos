@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kantong Kos — Catatan Keuangan Anak Kos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #161B22;
+    --bg-grid: #1D232C;
+    --paper: #F5EFE0;
+    --paper-dim: #EAE2CC;
+    --ink: #2B2620;
+    --muted: #8B8370;
+    --amber: #E5A03B;
+    --amber-dark: #C4832A;
+    --expense: #C6503C;
+    --expense-soft: #EFD6CE;
+    --income: #3D8A5F;
+    --income-soft: #D6E9DC;
+    --line: rgba(43,38,32,0.16);
+    --radius: 14px;
+    --shadow: 0 18px 40px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 20% 0%, #1c2330 0%, transparent 55%),
+      repeating-linear-gradient(0deg, var(--bg) 0px, var(--bg) 23px, var(--bg-grid) 24px),
+      var(--bg);
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding: 28px 14px 60px;
+  }
+  .app{
+    width:100%;
+    max-width: 460px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    animation: rise .5s ease both;
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    color: var(--paper);
+    padding: 2px 4px;
+  }
+  .brand-mono{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:700;
+    font-size: 22px;
+    line-height:1;
+    letter-spacing:-0.5px;
+  }
+  .brand-mono span{ color: var(--amber); }
+  .brand-tag{
+    font-size:11px;
+    color: #9AA3AF;
+    margin-top:4px;
+    letter-spacing:0.3px;
+  }
+  .month-nav{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background: rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius: 999px;
+    padding:4px 6px;
+  }
+  .month-nav button{
+    width:26px; height:26px;
+    border-radius:50%;
+    border:none;
+    background:transparent;
+    color:var(--paper);
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition: background .15s;
+  }
+  .month-nav button:hover{ background: rgba(255,255,255,0.15); }
+  .month-nav select{
+    appearance:none;
+    background:transparent;
+    border:none;
+    color:var(--paper);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    font-weight:600;
+    text-align:center;
+    padding:2px 2px;
+    cursor:pointer;
+  }
+  .month-nav select option{ color:#111; }
+
+  /* ---------- Banner ---------- */
+  .banner{
+    background: var(--amber);
+    color:#2B2013;
+    border-radius: 12px;
+    padding:12px 14px;
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow: var(--shadow);
+    animation: rise .4s ease both;
+  }
+  .banner b{display:block; font-size:13.5px; margin-bottom:2px;}
+  .banner .banner-actions{ margin-left:auto; display:flex; gap:6px; flex-shrink:0;}
+  .banner button.mini{
+    border:none; border-radius:8px; padding:6px 10px; font-size:12px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+  }
+  .banner .btn-dl{ background:#2B2013; color:var(--amber); }
+  .banner .btn-x{ background:transparent; color:#2B2013; font-size:16px; padding:0 4px;}
+
+  /* ---------- Receipt card (signature element) ---------- */
+  .receipt-wrap{ position:relative; }
+  .receipt-card{
+    background: var(--paper);
+    background-image: linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
+    background-size: 3px 100%;
+    border-radius: var(--radius) var(--radius) 0 0;
+    box-shadow: var(--shadow);
+    padding: 26px 24px 18px;
+    position:relative;
+    font-family:'IBM Plex Mono', monospace;
+    color: var(--ink);
+  }
+  .receipt-title{
+    text-align:center;
+    font-weight:700;
+    letter-spacing:2px;
+    font-size:13px;
+  }
+  .receipt-sub{
+    text-align:center;
+    color:var(--muted);
+    font-size:10.5px;
+    letter-spacing:1px;
+    margin-top:2px;
+    margin-bottom:16px;
+  }
+  .receipt-row{
+    display:flex;
+    align-items:flex-end;
+    gap:6px;
+    font-size:12.5px;
+    padding:5px 0;
+  }
+  .receipt-row .label{ white-space:nowrap; color:var(--ink); }
+  .receipt-row .dots{
+    flex:1;
+    border-bottom:2px dotted rgba(43,38,32,0.35);
+    transform: translateY(-3px);
+  }
+  .receipt-row .amount{ white-space:nowrap; font-weight:700; }
+  .receipt-row.balance .label, .receipt-row.balance .amount{ font-size:16px; }
+  .receipt-row.balance .amount{ color:var(--ink); }
+  .receipt-row .amount.income{ color:var(--income); }
+  .receipt-row .amount.expense{ color:var(--expense); }
+  .receipt-divider{
+    border-top:1.5px dashed rgba(43,38,32,0.3);
+    margin:8px 0 10px;
+  }
+  .receipt-barcode{
+    margin-top:14px;
+    height:26px;
+    background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 5px, var(--ink) 5px 6px, transparent 6px 9px, var(--ink) 9px 12px, transparent 12px 14px);
+    opacity:0.55;
+  }
+  .perforation{
+    height:18px;
+    background-color: var(--paper);
+    -webkit-mask-image: radial-gradient(circle at 9px 0px, transparent 9px, black 9.5px);
+    mask-image: radial-gradient(circle at 9px 0px, transparent 9px, black 9.5px);
+    -webkit-mask-size: 18px 18px;
+    mask-size: 18px 18px;
+    -webkit-mask-repeat: repeat-x;
+    mask-repeat: repeat-x;
+  }
+
+  /* ---------- Card generic ---------- */
+  .card{
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius);
+    padding: 18px 18px 20px;
+    color: var(--paper);
+  }
+  .card h3{
+    margin:0 0 12px;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:#B9C0CA;
+    font-weight:700;
+  }
+
+  /* ---------- Add transaction panel ---------- */
+  .type-toggle{
+    display:flex;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    padding:4px;
+    gap:4px;
+    margin-bottom:14px;
+  }
+  .toggle-btn{
+    flex:1;
+    border:none;
+    background:transparent;
+    color:#9AA3AF;
+    font-family:inherit;
+    font-weight:700;
+    font-size:13px;
+    padding:9px 0;
+    border-radius:7px;
+    cursor:pointer;
+    transition: all .15s;
+  }
+  .toggle-btn.active[data-type="expense"]{ background: var(--expense); color:#fff; }
+  .toggle-btn.active[data-type="income"]{ background: var(--income); color:#fff; }
+
+  .category-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .cat-chip{
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    padding:10px 4px 8px;
+    border-radius:10px;
+    border:1.5px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color:#C7CDD6;
+    cursor:pointer;
+    font-size:10.5px;
+    font-weight:600;
+    text-align:center;
+    transition: all .15s;
+  }
+  .cat-chip svg{ width:18px; height:18px; stroke:#C7CDD6; transition: stroke .15s; }
+  .cat-chip.selected{
+    border-color: var(--amber);
+    background: rgba(229,160,59,0.14);
+    color: var(--amber);
+  }
+  .cat-chip.selected svg{ stroke: var(--amber); }
+
+  .form-row{ display:flex; gap:8px; margin-bottom:8px; }
+  input[type="number"], input[type="date"], input[type="text"]{
+    font-family:'IBM Plex Mono', monospace;
+    background: rgba(0,0,0,0.28);
+    border:1.5px solid rgba(255,255,255,0.1);
+    border-radius:9px;
+    color: var(--paper);
+    padding:11px 12px;
+    font-size:13px;
+    width:100%;
+    outline:none;
+    transition: border-color .15s;
+  }
+  input::placeholder{ color:#727A85; font-family:'Plus Jakarta Sans', sans-serif; }
+  input:focus{ border-color: var(--amber); }
+  input[type="date"]{ color-scheme: dark; flex:0 0 150px; }
+  #noteInput{ margin-bottom:14px; font-family:'Plus Jakarta Sans', sans-serif; }
+
+  .btn-primary{
+    width:100%;
+    border:none;
+    border-radius:10px;
+    padding:13px 0;
+    background: var(--amber);
+    color:#2B2013;
+    font-weight:800;
+    font-size:14px;
+    cursor:pointer;
+    font-family:inherit;
+    transition: transform .1s, background .15s;
+  }
+  .btn-primary:hover{ background: var(--amber-dark); }
+  .btn-primary:active{ transform: scale(0.98); }
+  .form-error{ color:#F0A0A0; font-size:11.5px; margin:-6px 0 10px; display:none; }
+
+  /* ---------- Breakdown bars ---------- */
+  .bar-row{ margin-bottom:11px; }
+  .bar-row:last-child{ margin-bottom:0; }
+  .bar-top{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:11.5px; margin-bottom:5px; color:#D6DBE2;
+  }
+  .bar-top .bar-icon{ display:flex; align-items:center; gap:6px; font-weight:600;}
+  .bar-top svg{ width:13px;height:13px; stroke:#D6DBE2; }
+  .bar-top .bar-amt{ font-family:'IBM Plex Mono', monospace; color:#9FA6AE; }
+  .bar-track{
+    height:8px;
+    background: rgba(255,255,255,0.06);
+    border-radius:5px;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    background: linear-gradient(90deg, var(--amber-dark), var(--amber));
+    border-radius:5px;
+    transition: width .5s ease;
+  }
+  .breakdown-empty{ color:#79808A; font-size:12.5px; }
+
+  /* ---------- Transaction list ---------- */
+  .tx-list{ display:flex; flex-direction:column; }
+  .tx-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.09);
+    animation: rise .3s ease both;
+  }
+  .tx-row:last-child{ border-bottom:none; }
+  .tx-icon{
+    width:34px;height:34px;flex:0 0 34px;
+    border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .tx-icon svg{ width:16px;height:16px; }
+  .tx-icon.income{ background: var(--income-soft); }
+  .tx-icon.income svg{ stroke: var(--income); }
+  .tx-icon.expense{ background: var(--expense-soft); }
+  .tx-icon.expense svg{ stroke: var(--expense); }
+  .tx-mid{ flex:1; min-width:0; }
+  .tx-cat{ font-size:12.5px; font-weight:700; color:var(--paper); }
+  .tx-note{ font-size:11px; color:#9AA3AF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;}
+  .tx-date{ font-size:10px; color:#6E7580; font-family:'IBM Plex Mono', monospace; margin-top:2px;}
+  .tx-right{ text-align:right; flex-shrink:0; display:flex; align-items:center; gap:8px;}
+  .tx-amt{ font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:12.5px; }
+  .tx-amt.income{ color: var(--income); }
+  .tx-amt.expense{ color: var(--expense); }
+  .tx-del{
+    border:none; background:transparent; cursor:pointer; color:#5B626C;
+    width:22px;height:22px; border-radius:6px; display:flex;align-items:center;justify-content:center;
+    transition: color .15s, background .15s;
+  }
+  .tx-del:hover{ color:#F0A0A0; background: rgba(255,255,255,0.06); }
+  .tx-del svg{ width:14px;height:14px; }
+  .empty-state{ color:#79808A; font-size:12.5px; text-align:center; padding:18px 0; }
+
+  /* ---------- Download button ---------- */
+  .btn-download{
+    width:100%;
+    border:none;
+    border-radius: 12px;
+    padding:15px 0;
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.18);
+    color: var(--paper);
+    font-weight:700;
+    font-size:13.5px;
+    cursor:pointer;
+    font-family:inherit;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition: all .15s;
+  }
+  .btn-download:hover{ border-color: var(--amber); color: var(--amber); }
+  .btn-download svg{ width:16px;height:16px; }
+
+  .footnote{
+    text-align:center; color:#5B626C; font-size:10.5px; padding:4px 10px 0; line-height:1.5;
+  }
+
+  @media (max-width:380px){
+    .category-grid{ grid-template-columns: repeat(3, 1fr); }
+    .form-row{ flex-direction:column; }
+    input[type="date"]{ flex:1 1 auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <div>
+      <div class="brand-mono">KANTONG<span>.</span>KOS</div>
+      <div class="brand-tag">catatan keluar-masuk uang anak kos</div>
+    </div>
+    <div class="month-nav">
+      <button id="prevMonth" aria-label="Bulan sebelumnya">‹</button>
+      <select id="monthSelect"></select>
+      <button id="nextMonth" aria-label="Bulan berikutnya">›</button>
+    </div>
+  </div>
+
+  <div id="newMonthBanner" class="banner" hidden>
+    <div>
+      <b>Bulan baru dimulai 🎉</b>
+      <span id="bannerText">Jangan lupa unduh laporan bulan lalu.</span>
+    </div>
+    <div class="banner-actions">
+      <button class="mini btn-dl" id="downloadPrevBtn">Unduh</button>
+      <button class="mini btn-x" id="dismissBanner">✕</button>
+    </div>
+  </div>
+
+  <div class="receipt-wrap">
+    <div class="receipt-card">
+      <div class="receipt-title">= = = KANTONG KOS = = =</div>
+      <div class="receipt-sub">STRUK KEUANGAN BULANAN</div>
+
+      <div class="receipt-row balance">
+        <span class="label">SALDO SAAT INI</span>
+        <span class="dots"></span>
+        <span class="amount" id="balanceAmount">Rp 0</span>
+      </div>
+
+      <div class="receipt-divider"></div>
+
+      <div class="receipt-row">
+        <span class="label">Pemasukan bln ini</span>
+        <span class="dots"></span>
+        <span class="amount income" id="monthIncome">Rp 0</span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">Pengeluaran bln ini</span>
+        <span class="dots"></span>
+        <span class="amount expense" id="monthExpense">Rp 0</span>
+      </div>
+
+      <div class="receipt-barcode"></div>
+    </div>
+    <div class="perforation"></div>
+  </div>
+
+  <div class="card">
+    <h3>Catat Transaksi</h3>
+    <div class="type-toggle">
+      <button class="toggle-btn active" data-type="expense">↓ Pengeluaran</button>
+      <button class="toggle-btn" data-type="income">↑ Pemasukan</button>
+    </div>
+
+    <div class="category-grid" id="categoryGrid"></div>
+
+    <div class="form-row">
+      <input type="number" id="amountInput" placeholder="Jumlah (Rp)" min="0" inputmode="numeric">
+      <input type="date" id="dateInput">
+    </div>
+    <input type="text" id="noteInput" placeholder="Keterangan">
+    <div class="form-error" id="formError">Isi jumlah dan keterangannya dulu, ya.</div>
+    <button class="btn-primary" id="addBtn">+ Catat Transaksi</button>
+  </div>
+
+  <div class="card" id="breakdownSection">
+    <h3>Rincian Pengeluaran per Kategori</h3>
+    <div id="breakdownBars"></div>
+  </div>
+
+  <div class="card">
+    <h3>Riwayat Transaksi — <span id="txMonthLabel"></span></h3>
+    <div class="tx-list" id="txList"></div>
+    <div class="empty-state" id="emptyState" hidden>Belum ada transaksi bulan ini. Yuk mulai catat pengeluaran hari ini!</div>
+  </div>
+
+  <button class="btn-download" id="downloadBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+    Unduh Laporan Bulan Ini (.csv)
+  </button>
+
+  <div class="footnote">Data tersimpan otomatis di perangkat ini per bulan. Pindah bulan lewat panah di atas, lalu unduh kapan saja.</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ Storage abstraction (window.storage with localStorage fallback) ============ */
+  const useAppStorage = typeof window.storage !== "undefined" && window.storage;
+  async function storeGet(key){
+    if(useAppStorage){
+      try{ const r = await window.storage.get(key, false); return r ? JSON.parse(r.value) : null; }
+      catch(e){ return null; }
+    }
+    try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }catch(e){ return null; }
+  }
+  async function storeSet(key, value){
+    if(useAppStorage){
+      try{ await window.storage.set(key, JSON.stringify(value), false); return true; }
+      catch(e){ /* fall through to localStorage as backup */ }
+    }
+    try{ localStorage.setItem(key, JSON.stringify(value)); return true; }catch(e){ return false; }
+  }
+
+  const TX_KEY = "kantongkos_transactions_v1";
+  const LAST_MONTH_KEY = "kantongkos_last_month_v1";
+
+  /* ============ Categories ============ */
+  const ICONS = {
+    coffee: '<path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v1a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 0 1 0 8h-1"/><path d="M6 19h11"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/>',
+    home: '<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',
+    bag: '<path d="M6 8h12l1 12H5L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    wallet: '<path d="M20 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="M16 5H6a2 2 0 0 0-2 2"/><path d="M18 13.5h.01"/>',
+    trash: '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/>'
+  };
+  function iconSvg(name){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[name]+'</svg>'; }
+
+  const EXPENSE_CATEGORIES = [
+    { id:"sarapan",       label:"Sarapan",       icon:"coffee", placeholder:"misal: nasi kuning, roti bakar" },
+    { id:"makan_siang",   label:"Makan Siang",   icon:"sun",    placeholder:"misal: warteg, ayam geprek" },
+    { id:"makan_malam",   label:"Makan Malam",   icon:"moon",   placeholder:"misal: nasi goreng, mie ayam" },
+    { id:"kebutuhan_kos", label:"Kebutuhan Kos", icon:"home",   placeholder:"isi sendiri: sabun, token listrik, dll" },
+    { id:"jajan",         label:"Jajan",         icon:"bag",    placeholder:"isi sendiri: cemilan, kopi kekinian, dll" },
+  ];
+  function catById(id){ return EXPENSE_CATEGORIES.find(c=>c.id===id); }
+
+  const MONTHS_ID = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+
+  /* ============ State ============ */
+  let transactions = [];
+  let viewedMonth = monthKey(new Date());
+  let currentType = "expense";
+  let selectedCategory = "sarapan";
+
+  /* ============ Helpers ============ */
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function monthKey(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1); }
+  function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+  function formatRupiah(n){
+    const v = Math.round(Number(n)||0);
+    return "Rp " + v.toLocaleString("id-ID");
+  }
+  function formatMonthLabel(mKey){
+    const [y,m] = mKey.split("-").map(Number);
+    return MONTHS_ID[m-1] + " " + y;
+  }
+  function shiftMonth(mKey, delta){
+    let [y,m] = mKey.split("-").map(Number);
+    m += delta;
+    while(m>12){ m-=12; y+=1; }
+    while(m<1){ m+=12; y-=1; }
+    return y+"-"+pad2(m);
+  }
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+
+  /* ============ Persistence ============ */
+  async function loadAll(){
+    transactions = (await storeGet(TX_KEY)) || [];
+  }
+  async function persist(){
+    await storeSet(TX_KEY, transactions);
+  }
+
+  /* ============ New-month reminder ============ */
+  async function checkNewMonth(){
+    const realNow = monthKey(new Date());
+    const lastSeen = await storeGet(LAST_MONTH_KEY);
+    if(lastSeen && lastSeen !== realNow){
+      const hasData = transactions.some(t=>t.date.slice(0,7)===lastSeen);
+      if(hasData){
+        document.getElementById("bannerText").textContent =
+          "Jangan lupa unduh laporan " + formatMonthLabel(lastSeen) + " sebelum kelewatan.";
+        const banner = document.getElementById("newMonthBanner");
+        banner.hidden = false;
+        document.getElementById("downloadPrevBtn").onclick = ()=> downloadCSV(lastSeen);
+        document.getElementById("dismissBanner").onclick = ()=> banner.hidden = true;
+      }
+    }
+    await storeSet(LAST_MONTH_KEY, realNow);
+  }
+
+  /* ============ Rendering ============ */
+  function monthsWithData(){
+    const set = new Set(transactions.map(t=>t.date.slice(0,7)));
+    set.add(monthKey(new Date()));
+    set.add(viewedMonth);
+    return Array.from(set).sort().reverse();
+  }
+
+  function renderMonthSelect(){
+    const sel = document.getElementById("monthSelect");
+    const months = monthsWithData();
+    sel.innerHTML = months.map(m=>`<option value="${m}" ${m===viewedMonth?"selected":""}>${formatMonthLabel(m)}</option>`).join("");
+  }
+
+  function renderCategoryGrid(){
+    const grid = document.getElementById("categoryGrid");
+    if(currentType === "income"){
+      grid.style.display = "none";
+      return;
+    }
+    grid.style.display = "grid";
+    grid.innerHTML = EXPENSE_CATEGORIES.map(c=>`
+      <div class="cat-chip ${c.id===selectedCategory?"selected":""}" data-cat="${c.id}">
+        ${iconSvg(c.icon)}
+        <span>${c.label}</span>
+      </div>`).join("");
+    grid.querySelectorAll(".cat-chip").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        selectedCategory = el.getAttribute("data-cat");
+        renderCategoryGrid();
+        updateNotePlaceholder();
+      });
+    });
+  }
+
+  function updateNotePlaceholder(){
+    const note = document.getElementById("noteInput");
+    if(currentType === "income"){
+      note.placeholder = "misal: kiriman ortu, gaji part time";
+    } else {
+      note.placeholder = catById(selectedCategory).placeholder;
+    }
+  }
+
+  function txForMonth(mKey){
+    return transactions.filter(t=>t.date.slice(0,7)===mKey).sort((a,b)=> a.date < b.date ? 1 : -1);
+  }
+
+  function renderSummary(){
+    const totalIncome = transactions.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+    const totalExpense = transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+    const balance = totalIncome - totalExpense;
+    document.getElementById("balanceAmount").textContent = formatRupiah(balance);
+
+    const monthTx = txForMonth(viewedMonth);
+    const mIncome = monthTx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+    const mExpense = monthTx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+    document.getElementById("monthIncome").textContent = formatRupiah(mIncome);
+    document.getElementById("monthExpense").textContent = formatRupiah(mExpense);
+  }
+
+  function renderBreakdown(){
+    const el = document.getElementById("breakdownBars");
+    const monthTx = txForMonth(viewedMonth).filter(t=>t.type==="expense");
+    if(monthTx.length===0){
+      el.innerHTML = '<div class="breakdown-empty">Belum ada pengeluaran bulan ini.</div>';
+      return;
+    }
+    const totals = {};
+    EXPENSE_CATEGORIES.forEach(c=> totals[c.id]=0);
+    monthTx.forEach(t=> totals[t.category] = (totals[t.category]||0) + t.amount);
+    const maxVal = Math.max(...Object.values(totals), 1);
+    el.innerHTML = EXPENSE_CATEGORIES.map(c=>{
+      const val = totals[c.id]||0;
+      const pct = Math.round((val/maxVal)*100);
+      return `
+        <div class="bar-row">
+          <div class="bar-top">
+            <span class="bar-icon">${iconSvg(c.icon)} ${c.label}</span>
+            <span class="bar-amt">${formatRupiah(val)}</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:${val>0?Math.max(pct,4):0}%"></div></div>
+        </div>`;
+    }).join("");
+  }
+
+  function renderTxList(){
+    document.getElementById("txMonthLabel").textContent = formatMonthLabel(viewedMonth);
+    const list = document.getElementById("txList");
+    const empty = document.getElementById("emptyState");
+    const monthTx = txForMonth(viewedMonth);
+    if(monthTx.length===0){
+      list.innerHTML = "";
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    list.innerHTML = monthTx.map(t=>{
+      const isIncome = t.type==="income";
+      const icon = isIncome ? "wallet" : catById(t.category).icon;
+      const label = isIncome ? "Pemasukan" : catById(t.category).label;
+      const [y,m,d] = t.date.split("-");
+      const dateLabel = d + " " + MONTHS_SHORT[Number(m)-1];
+      return `
+        <div class="tx-row" data-id="${t.id}">
+          <div class="tx-icon ${isIncome?"income":"expense"}">${iconSvg(icon)}</div>
+          <div class="tx-mid">
+            <div class="tx-cat">${label}</div>
+            ${t.note ? `<div class="tx-note">${escapeHtml(t.note)}</div>` : ""}
+            <div class="tx-date">${dateLabel}</div>
+          </div>
+          <div class="tx-right">
+            <span class="tx-amt ${isIncome?"income":"expense"}">${isIncome?"+":"-"} ${formatRupiah(t.amount)}</span>
+            <button class="tx-del" data-del="${t.id}" aria-label="Hapus">${iconSvg("trash")}</button>
+          </div>
+        </div>`;
+    }).join("");
+
+    list.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.getAttribute("data-del");
+        transactions = transactions.filter(t=>t.id!==id);
+        await persist();
+        renderAll();
+      });
+    });
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+  }
+
+  function renderAll(){
+    renderMonthSelect();
+    renderSummary();
+    renderBreakdown();
+    renderTxList();
+  }
+
+  /* ============ CSV export ============ */
+  function csvField(v){
+    const s = String(v ?? "");
+    if(/[;"\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  }
+  function downloadCSV(mKey){
+    const monthTx = txForMonth(mKey).slice().sort((a,b)=> a.date < b.date ? -1 : 1);
+    const monthLabel = formatMonthLabel(mKey);
+    const rows = [];
+    rows.push(["Laporan Keuangan Kantong Kos"]);
+    rows.push([monthLabel]);
+    rows.push([]);
+    rows.push(["Tanggal","Tipe","Kategori","Keterangan","Jumlah (Rp)"]);
+    monthTx.forEach(t=>{
+      rows.push([
+        t.date,
+        t.type==="income" ? "Pemasukan" : "Pengeluaran",
+        t.type==="income" ? "-" : catById(t.category).label,
+        t.note || "",
+        t.amount
+      ]);
+    });
+    const totalIncome = monthTx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+    const totalExpense = monthTx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+    rows.push([]);
+    rows.push(["","","","Total Pemasukan", totalIncome]);
+    rows.push(["","","","Total Pengeluaran", totalExpense]);
+    rows.push(["","","","Sisa Bulan Ini", totalIncome-totalExpense]);
+
+    const csv = rows.map(r=> r.map(csvField).join(";")).join("\r\n");
+    const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Laporan-Kos_${mKey}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  }
+
+  /* ============ Events ============ */
+  function setupEvents(){
+    document.querySelectorAll(".toggle-btn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        currentType = btn.getAttribute("data-type");
+        document.querySelectorAll(".toggle-btn").forEach(b=>b.classList.toggle("active", b===btn));
+        renderCategoryGrid();
+        updateNotePlaceholder();
+      });
+    });
+
+    document.getElementById("prevMonth").addEventListener("click", ()=>{
+      viewedMonth = shiftMonth(viewedMonth, -1);
+      renderAll();
+    });
+    document.getElementById("nextMonth").addEventListener("click", ()=>{
+      viewedMonth = shiftMonth(viewedMonth, 1);
+      renderAll();
+    });
+    document.getElementById("monthSelect").addEventListener("change", (e)=>{
+      viewedMonth = e.target.value;
+      renderAll();
+    });
+
+    document.getElementById("addBtn").addEventListener("click", async ()=>{
+      const amountInput = document.getElementById("amountInput");
+      const dateInput = document.getElementById("dateInput");
+      const noteInput = document.getElementById("noteInput");
+      const errorEl = document.getElementById("formError");
+
+      const amount = Number(amountInput.value);
+      const date = dateInput.value || todayStr();
+      const note = noteInput.value.trim();
+
+      if(!amount || amount<=0 || !note){
+        errorEl.style.display = "block";
+        return;
+      }
+      errorEl.style.display = "none";
+
+      const tx = {
+        id: uid(),
+        type: currentType,
+        category: currentType==="expense" ? selectedCategory : null,
+        amount, date, note,
+        createdAt: Date.now()
+      };
+      transactions.push(tx);
+      await persist();
+
+      viewedMonth = date.slice(0,7);
+      amountInput.value = "";
+      noteInput.value = "";
+      renderAll();
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", ()=> downloadCSV(viewedMonth));
+  }
+
+  /* ============ Init ============ */
+  async function init(){
+    document.getElementById("dateInput").value = todayStr();
+    await loadAll();
+    await checkNewMonth();
+    renderCategoryGrid();
+    updateNotePlaceholder();
+    setupEvents();
+    renderAll();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
